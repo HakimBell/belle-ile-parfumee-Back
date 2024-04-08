@@ -92,7 +92,7 @@ module.exports =
 /*!**********************************************!*\
   !*** ./src/controllers/productController.js ***!
   \**********************************************/
-/*! exports provided: addProduct, allProducts, deleteProduct, updateProduct */
+/*! exports provided: addProduct, allProducts, deleteProduct, updateProduct, getProductById */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -101,6 +101,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "allProducts", function() { return allProducts; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "deleteProduct", function() { return deleteProduct; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateProduct", function() { return updateProduct; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getProductById", function() { return getProductById; });
 /* harmony import */ var _models_productModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/productModel */ "./src/models/productModel.js");
 
 // Ajouter un parfum
@@ -175,6 +176,23 @@ const updateProduct = async (req, res) => {
     });
   }
 };
+// Récupere un seul parfum
+const getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await _models_productModel__WEBPACK_IMPORTED_MODULE_0__["default"].findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        message: "Produit non trouvé"
+      });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
 
 // Récuperer tous les parfums
 const allProducts = async (req, res) => {
@@ -208,7 +226,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var mongoose__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(mongoose__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var cors__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! cors */ "cors");
 /* harmony import */ var cors__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cors__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _controllers_productController__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./controllers/productController */ "./src/controllers/productController.js");
+/* harmony import */ var _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./routes/productRoute */ "./src/routes/productRoute.js");
 
 
 dotenv__WEBPACK_IMPORTED_MODULE_1___default.a.config();
@@ -228,10 +246,7 @@ app.use(express__WEBPACK_IMPORTED_MODULE_0___default.a.urlencoded({
   extended: false
 }));
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/add-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_4__["addProduct"]);
-app.use("/all", _controllers_productController__WEBPACK_IMPORTED_MODULE_4__["allProducts"]);
-app.use("/:id/delete-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_4__["deleteProduct"]);
-app.use("/:id/update-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_4__["updateProduct"]);
+app.use("/products", _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
 app.listen(port, () => console.log(`[SERVER] is running on http://localhost:${port}`));
 
 /***/ }),
@@ -267,6 +282,30 @@ const productSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
 });
 const Product = mongoose__WEBPACK_IMPORTED_MODULE_0___default.a.model("Product", productSchema);
 /* harmony default export */ __webpack_exports__["default"] = (Product);
+
+/***/ }),
+
+/***/ "./src/routes/productRoute.js":
+/*!************************************!*\
+  !*** ./src/routes/productRoute.js ***!
+  \************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _controllers_productController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../controllers/productController */ "./src/controllers/productController.js");
+
+
+const productRouter = Object(express__WEBPACK_IMPORTED_MODULE_0__["Router"])();
+productRouter.post("/add-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["addProduct"]);
+productRouter.get("/all", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["allProducts"]);
+productRouter.delete("/:id/delete-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["deleteProduct"]);
+productRouter.put("/:id/update-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["updateProduct"]);
+productRouter.get("/:id", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["getProductById"]);
+/* harmony default export */ __webpack_exports__["default"] = (productRouter);
 
 /***/ }),
 

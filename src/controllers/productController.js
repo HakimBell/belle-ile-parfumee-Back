@@ -50,6 +50,19 @@ const updateProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// Récupere un seul parfum
+const getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Produit non trouvé" });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Récuperer tous les parfums
 const allProducts = async (req, res) => {
@@ -61,4 +74,10 @@ const allProducts = async (req, res) => {
   }
 };
 
-export { addProduct, allProducts, deleteProduct, updateProduct };
+export {
+  addProduct,
+  allProducts,
+  deleteProduct,
+  updateProduct,
+  getProductById,
+};

@@ -5,12 +5,7 @@ const app = express();
 const port = process.env.PORT;
 import mongoose from "mongoose";
 import cors from "cors";
-import {
-  addProduct,
-  allProducts,
-  deleteProduct,
-  updateProduct,
-} from "./controllers/productController";
+import productRouter from "./routes/productRoute";
 
 main().catch((err) => console.log(err));
 async function main() {
@@ -22,10 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/add-product", addProduct);
-app.use("/all", allProducts);
-app.use("/:id/delete-product", deleteProduct);
-app.use("/:id/update-product", updateProduct);
+app.use("/products", productRouter);
 app.listen(port, () =>
   console.log(`[SERVER] is running on http://localhost:${port}`)
 );
