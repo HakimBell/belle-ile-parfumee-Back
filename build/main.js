@@ -209,6 +209,43 @@ const allProducts = async (req, res) => {
 
 /***/ }),
 
+/***/ "./src/controllers/userController.js":
+/*!*******************************************!*\
+  !*** ./src/controllers/userController.js ***!
+  \*******************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _models_userModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/userModel */ "./src/models/userModel.js");
+
+const createUser = async (req, res) => {
+  try {
+    const newUser = new _models_userModel__WEBPACK_IMPORTED_MODULE_0__["default"]({
+      name: req.body.name,
+      email: req.body.email
+    });
+
+    // Appel de la méthode crypto après l'initialisation de newUser
+    newUser.password = await newUser.crypto(req.body.password);
+    await newUser.save();
+    console.log("New user saved", newUser);
+    res.json({
+      newUser,
+      message: "New user saved"
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error creating user"
+    });
+  }
+};
+/* harmony default export */ __webpack_exports__["default"] = (createUser);
+
+/***/ }),
+
 /***/ "./src/index.js":
 /*!**********************!*\
   !*** ./src/index.js ***!
@@ -227,11 +264,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var cors__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! cors */ "cors");
 /* harmony import */ var cors__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cors__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./routes/productRoute */ "./src/routes/productRoute.js");
+/* harmony import */ var _routes_userRoute__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./routes/userRoute */ "./src/routes/userRoute.js");
 
 
 dotenv__WEBPACK_IMPORTED_MODULE_1___default.a.config();
 const app = express__WEBPACK_IMPORTED_MODULE_0___default()();
 const port = process.env.PORT;
+
 
 
 
@@ -247,6 +286,7 @@ app.use(express__WEBPACK_IMPORTED_MODULE_0___default.a.urlencoded({
 }));
 app.get("/", (req, res) => res.send("Bienvenue"));
 app.use("/products", _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
+app.use("/auth", _routes_userRoute__WEBPACK_IMPORTED_MODULE_5__["default"]);
 app.listen(port, () => console.log(`[SERVER] is running on http://localhost:${port}`));
 
 /***/ }),
@@ -285,6 +325,51 @@ const Product = mongoose__WEBPACK_IMPORTED_MODULE_0___default.a.model("Product",
 
 /***/ }),
 
+/***/ "./src/models/userModel.js":
+/*!*********************************!*\
+  !*** ./src/models/userModel.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var mongoose__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! mongoose */ "mongoose");
+/* harmony import */ var mongoose__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(mongoose__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var bcryptjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! bcryptjs */ "bcryptjs");
+/* harmony import */ var bcryptjs__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(bcryptjs__WEBPACK_IMPORTED_MODULE_1__);
+
+
+const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true,
+    min: [6, "Must be at least 6 characters"]
+  }
+});
+userSchema.methods.crypto = async password => {
+  const salt = await bcryptjs__WEBPACK_IMPORTED_MODULE_1___default.a.genSalt(10);
+  const hash = await bcryptjs__WEBPACK_IMPORTED_MODULE_1___default.a.hash(password, salt);
+  return hash;
+};
+userSchema.methods.verifPass = async (password, elderPassword) => {
+  const result = await bcryptjs__WEBPACK_IMPORTED_MODULE_1___default.a.compare(password, elderPassword);
+  return result;
+};
+const User = mongoose__WEBPACK_IMPORTED_MODULE_0__["mongoose"].model("User", userSchema);
+/* harmony default export */ __webpack_exports__["default"] = (User);
+
+/***/ }),
+
 /***/ "./src/routes/productRoute.js":
 /*!************************************!*\
   !*** ./src/routes/productRoute.js ***!
@@ -309,6 +394,26 @@ productRouter.get("/:id", _controllers_productController__WEBPACK_IMPORTED_MODUL
 
 /***/ }),
 
+/***/ "./src/routes/userRoute.js":
+/*!*********************************!*\
+  !*** ./src/routes/userRoute.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _controllers_userController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../controllers/userController */ "./src/controllers/userController.js");
+
+
+const authRouter = Object(express__WEBPACK_IMPORTED_MODULE_0__["Router"])();
+authRouter.post("/register", _controllers_userController__WEBPACK_IMPORTED_MODULE_1__["default"]);
+/* harmony default export */ __webpack_exports__["default"] = (authRouter);
+
+/***/ }),
+
 /***/ 0:
 /*!****************************!*\
   !*** multi ./src/index.js ***!
@@ -318,6 +423,17 @@ productRouter.get("/:id", _controllers_productController__WEBPACK_IMPORTED_MODUL
 
 module.exports = __webpack_require__(/*! /Users/hakim/dev/belle-ile-parfumee-Back/src/index.js */"./src/index.js");
 
+
+/***/ }),
+
+/***/ "bcryptjs":
+/*!***************************!*\
+  !*** external "bcryptjs" ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("bcryptjs");
 
 /***/ }),
 
