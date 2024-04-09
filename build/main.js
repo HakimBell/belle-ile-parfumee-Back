@@ -213,11 +213,13 @@ const allProducts = async (req, res) => {
 /*!*******************************************!*\
   !*** ./src/controllers/userController.js ***!
   \*******************************************/
-/*! exports provided: default */
+/*! exports provided: createUser, login */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createUser", function() { return createUser; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "login", function() { return login; });
 /* harmony import */ var _models_userModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/userModel */ "./src/models/userModel.js");
 
 const createUser = async (req, res) => {
@@ -226,8 +228,6 @@ const createUser = async (req, res) => {
       name: req.body.name,
       email: req.body.email
     });
-
-    // Appel de la méthode crypto après l'initialisation de newUser
     newUser.password = await newUser.crypto(req.body.password);
     await newUser.save();
     console.log("New user saved", newUser);
@@ -242,7 +242,31 @@ const createUser = async (req, res) => {
     });
   }
 };
-/* harmony default export */ __webpack_exports__["default"] = (createUser);
+const login = async (req, res) => {
+  const email = req.body.email;
+  try {
+    const user = await _models_userModel__WEBPACK_IMPORTED_MODULE_0__["default"].findOne({
+      email
+    }).select("+password");
+    const verify = await user.verifPass(req.body.password, user.password);
+    if (!verify) {
+      const error = new Error("Invalid Password");
+      console.log(error);
+      res.json({
+        message: "Invalid Password",
+        error
+      });
+      throw error;
+    }
+    res.json({
+      user,
+      message: "Login succesfull"
+    });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
 /***/ }),
 
@@ -409,7 +433,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const authRouter = Object(express__WEBPACK_IMPORTED_MODULE_0__["Router"])();
-authRouter.post("/register", _controllers_userController__WEBPACK_IMPORTED_MODULE_1__["default"]);
+authRouter.post("/register", _controllers_userController__WEBPACK_IMPORTED_MODULE_1__["createUser"]);
+authRouter.post("/login", _controllers_userController__WEBPACK_IMPORTED_MODULE_1__["login"]);
 /* harmony default export */ __webpack_exports__["default"] = (authRouter);
 
 /***/ }),
