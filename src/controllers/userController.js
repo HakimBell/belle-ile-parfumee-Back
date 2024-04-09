@@ -1,17 +1,25 @@
 import User from "../models/userModel";
+import { generateAuthToken } from "../middlewares/auth";
 
 const createUser = async (req, res) => {
   try {
     const newUser = new User({
       name: req.body.name,
+      firstname: req.body.firstname,
       email: req.body.email,
+      password: req.body.password,
+      address: req.body.address,
+      phoneNumber: req.body.phoneNumber,
     });
     newUser.password = await newUser.crypto(req.body.password);
 
     await newUser.save();
-    console.log("New user saved", newUser);
-
-    res.json({ newUser, message: "New user saved" });
+    const token = generateAuthToken({
+      email: newUser.email,
+      name: newUser.name,
+    });
+    console.log(token);
+    res.json({ newUser, token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error creating user" });
@@ -29,7 +37,8 @@ const login = async (req, res) => {
       res.json({ message: "Invalid Password", error });
       throw error;
     }
-    res.json({ user, message: "Login succesfull" });
+    const token = generateAuthToken(user);
+    res.json({ user, token });
   } catch (error) {
     console.error(error);
   }

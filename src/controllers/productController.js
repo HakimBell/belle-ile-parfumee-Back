@@ -1,12 +1,14 @@
 import Product from "../models/productModel";
 // Ajouter un parfum
 const addProduct = async (req, res) => {
-  const { name, ml, price } = req.body;
+  const { name, ml, price, description } = req.body;
   try {
     const newProduct = new Product({
       name,
       ml,
       price,
+      description,
+      gender,
     });
     await newProduct.save();
     res.status(201).json(newProduct);

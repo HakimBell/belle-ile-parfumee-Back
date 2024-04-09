@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import productRouter from "./routes/productRoute";
 import authRouter from "./routes/userRoute";
+import { auth } from "./middlewares/auth";
 
 main().catch((err) => console.log(err));
 async function main() {
@@ -17,8 +18,9 @@ async function main() {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/products", productRouter);
+app.use("/products", auth, productRouter);
 app.use("/auth", authRouter);
 app.listen(port, () =>
   console.log(`[SERVER] is running on http://localhost:${port}`)

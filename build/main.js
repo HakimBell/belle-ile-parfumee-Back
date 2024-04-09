@@ -109,13 +109,16 @@ const addProduct = async (req, res) => {
   const {
     name,
     ml,
-    price
+    price,
+    description
   } = req.body;
   try {
     const newProduct = new _models_productModel__WEBPACK_IMPORTED_MODULE_0__["default"]({
       name,
       ml,
-      price
+      price,
+      description,
+      gender
     });
     await newProduct.save();
     res.status(201).json(newProduct);
@@ -221,19 +224,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createUser", function() { return createUser; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "login", function() { return login; });
 /* harmony import */ var _models_userModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/userModel */ "./src/models/userModel.js");
+/* harmony import */ var _middlewares_auth__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../middlewares/auth */ "./src/middlewares/auth.js");
+
 
 const createUser = async (req, res) => {
   try {
     const newUser = new _models_userModel__WEBPACK_IMPORTED_MODULE_0__["default"]({
       name: req.body.name,
-      email: req.body.email
+      firstname: req.body.firstname,
+      email: req.body.email,
+      password: req.body.password,
+      address: req.body.address,
+      phoneNumber: req.body.phoneNumber
     });
     newUser.password = await newUser.crypto(req.body.password);
     await newUser.save();
-    console.log("New user saved", newUser);
+    const token = Object(_middlewares_auth__WEBPACK_IMPORTED_MODULE_1__["generateAuthToken"])({
+      email: newUser.email,
+      name: newUser.name
+    });
+    console.log(token);
     res.json({
       newUser,
-      message: "New user saved"
+      token
     });
   } catch (error) {
     console.error(error);
@@ -258,9 +271,10 @@ const login = async (req, res) => {
       });
       throw error;
     }
+    const token = Object(_middlewares_auth__WEBPACK_IMPORTED_MODULE_1__["generateAuthToken"])(user);
     res.json({
       user,
-      message: "Login succesfull"
+      token
     });
   } catch (error) {
     console.error(error);
@@ -289,11 +303,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var cors__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(cors__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./routes/productRoute */ "./src/routes/productRoute.js");
 /* harmony import */ var _routes_userRoute__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./routes/userRoute */ "./src/routes/userRoute.js");
+/* harmony import */ var _middlewares_auth__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./middlewares/auth */ "./src/middlewares/auth.js");
 
 
 dotenv__WEBPACK_IMPORTED_MODULE_1___default.a.config();
 const app = express__WEBPACK_IMPORTED_MODULE_0___default()();
 const port = process.env.PORT;
+
 
 
 
@@ -309,9 +325,61 @@ app.use(express__WEBPACK_IMPORTED_MODULE_0___default.a.urlencoded({
   extended: false
 }));
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/products", _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
+app.use("/products", _middlewares_auth__WEBPACK_IMPORTED_MODULE_6__["auth"], _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
 app.use("/auth", _routes_userRoute__WEBPACK_IMPORTED_MODULE_5__["default"]);
 app.listen(port, () => console.log(`[SERVER] is running on http://localhost:${port}`));
+
+/***/ }),
+
+/***/ "./src/middlewares/auth.js":
+/*!*********************************!*\
+  !*** ./src/middlewares/auth.js ***!
+  \*********************************/
+/*! exports provided: auth, generateAuthToken */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "auth", function() { return auth; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "generateAuthToken", function() { return generateAuthToken; });
+/* harmony import */ var jsonwebtoken__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jsonwebtoken */ "jsonwebtoken");
+/* harmony import */ var jsonwebtoken__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(jsonwebtoken__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var dotenv_config__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dotenv/config */ "dotenv/config");
+/* harmony import */ var dotenv_config__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(dotenv_config__WEBPACK_IMPORTED_MODULE_1__);
+
+
+const auth = (req, res, next) => {
+  // Récupérer le token JWT de l'en-tête Authorization
+  const tokenHeader = req.headers.authorization;
+  const token = tokenHeader.split(" ")[1];
+
+  // Vérifier si le token existe
+  if (!token) {
+    return res.status(401).json({
+      message: "Accès non autorisé. Token manquant."
+    });
+  }
+  try {
+    // Vérifier la validité du token
+    const decoded = jsonwebtoken__WEBPACK_IMPORTED_MODULE_0___default.a.verify(token, process.env.JWT_SECRET); // Remplacez par votre clé secrète réelle
+    req.user = decoded.user; // Ajouter les données utilisateur décryptées à l'objet req
+    next(); // Passer au middleware suivant
+  } catch (error) {
+    // En cas d'erreur de vérification du token
+    res.status(401).json({
+      message: "Token invalide."
+    });
+  }
+};
+const generateAuthToken = user => {
+  const token = jsonwebtoken__WEBPACK_IMPORTED_MODULE_0___default.a.sign({
+    user
+  }, process.env.JWT_SECRET, {
+    expiresIn: "7d"
+  });
+  return token;
+};
+
 
 /***/ }),
 
@@ -332,6 +400,10 @@ const productSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
     type: String,
     required: true
   },
+  description: {
+    type: String,
+    required: true
+  },
   ml: {
     type: String,
     required: true
@@ -342,6 +414,11 @@ const productSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
   },
   image: {
     type: String
+  },
+  gender: {
+    type: String,
+    enum: ["masculin", "féminin", "mixte"],
+    required: true
   }
 });
 const Product = mongoose__WEBPACK_IMPORTED_MODULE_0___default.a.model("Product", productSchema);
@@ -369,6 +446,9 @@ const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
     type: String,
     required: true
   },
+  firstName: {
+    type: String
+  },
   email: {
     type: String,
     unique: true,
@@ -378,6 +458,14 @@ const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
     type: String,
     required: true,
     min: [6, "Must be at least 6 characters"]
+  },
+  address: {
+    type: String,
+    required: true
+  },
+  phoneNumber: {
+    type: String,
+    required: true
   }
 });
 userSchema.methods.crypto = async password => {
@@ -484,6 +572,17 @@ module.exports = require("dotenv");
 
 /***/ }),
 
+/***/ "dotenv/config":
+/*!********************************!*\
+  !*** external "dotenv/config" ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("dotenv/config");
+
+/***/ }),
+
 /***/ "express":
 /*!**************************!*\
   !*** external "express" ***!
@@ -492,6 +591,17 @@ module.exports = require("dotenv");
 /***/ (function(module, exports) {
 
 module.exports = require("express");
+
+/***/ }),
+
+/***/ "jsonwebtoken":
+/*!*******************************!*\
+  !*** external "jsonwebtoken" ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("jsonwebtoken");
 
 /***/ }),
 

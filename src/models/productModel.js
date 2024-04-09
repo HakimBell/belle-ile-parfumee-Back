@@ -4,6 +4,10 @@ const productSchema = new Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    required: true,
+  },
   ml: {
     type: String,
     required: true,
@@ -14,6 +18,11 @@ const productSchema = new Schema({
   },
   image: {
     type: String,
+  },
+  gender: {
+    type: String,
+    enum: ["masculin", "féminin", "mixte"],
+    required: true,
   },
 });
 
