@@ -92,7 +92,7 @@ module.exports =
 /*!**********************************************!*\
   !*** ./src/controllers/productController.js ***!
   \**********************************************/
-/*! exports provided: addProduct, allProducts, deleteProduct, updateProduct, getProductById */
+/*! exports provided: addProduct, allProducts, deleteProduct, updateProduct, getProductById, addToCart */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -102,7 +102,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "deleteProduct", function() { return deleteProduct; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "updateProduct", function() { return updateProduct; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getProductById", function() { return getProductById; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addToCart", function() { return addToCart; });
 /* harmony import */ var _models_productModel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../models/productModel */ "./src/models/productModel.js");
+/* harmony import */ var _models_cartModel__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../models/cartModel */ "./src/models/cartModel.js");
+/* harmony import */ var _models_userModel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../models/userModel */ "./src/models/userModel.js");
+
+
+
 
 // Ajouter un parfum
 const addProduct = async (req, res) => {
@@ -110,7 +116,9 @@ const addProduct = async (req, res) => {
     name,
     ml,
     price,
-    description
+    description,
+    gender,
+    image
   } = req.body;
   try {
     const newProduct = new _models_productModel__WEBPACK_IMPORTED_MODULE_0__["default"]({
@@ -118,7 +126,8 @@ const addProduct = async (req, res) => {
       ml,
       price,
       description,
-      gender
+      gender,
+      image
     });
     await newProduct.save();
     res.status(201).json(newProduct);
@@ -205,6 +214,35 @@ const allProducts = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: error.message
+    });
+  }
+};
+const addToCart = async (req, res) => {
+  try {
+    const product = await _models_productModel__WEBPACK_IMPORTED_MODULE_0__["default"].findById({
+      _id: req.params.id
+    });
+    if (!product) {
+      return res.status(404).json({
+        error: "Product not found"
+      });
+    }
+    const user = await _models_userModel__WEBPACK_IMPORTED_MODULE_2__["default"].findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found"
+      });
+    } else {
+      user.cart.push([product.id]);
+      await user.save();
+    }
+    res.json({
+      user,
+      message: "Product added successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
     });
   }
 };
@@ -383,6 +421,49 @@ const generateAuthToken = user => {
 
 /***/ }),
 
+/***/ "./src/models/cartModel.js":
+/*!*********************************!*\
+  !*** ./src/models/cartModel.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var mongoose__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! mongoose */ "mongoose");
+/* harmony import */ var mongoose__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(mongoose__WEBPACK_IMPORTED_MODULE_0__);
+
+const cartSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
+  products: [{
+    productId: {
+      type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
+    quantity: {
+      type: Number,
+      default: 1
+    }
+  }],
+  user: {
+    type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  active: {
+    type: Boolean,
+    default: true
+  },
+  modifiedOn: {
+    type: Date,
+    default: Date.now
+  }
+});
+const Cart = Object(mongoose__WEBPACK_IMPORTED_MODULE_0__["model"])("Cart", cartSchema);
+/* harmony default export */ __webpack_exports__["default"] = (Cart);
+
+/***/ }),
+
 /***/ "./src/models/productModel.js":
 /*!************************************!*\
   !*** ./src/models/productModel.js ***!
@@ -463,10 +544,24 @@ const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
     type: String,
     required: true
   },
+  zipCode: {
+    type: Number,
+    min: [1000, "Zip Code is too short"],
+    max: 99999
+    // required: true,
+  },
   phoneNumber: {
     type: String,
     required: true
-  }
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  cart: [{
+    type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
+    ref: "Product"
+  }]
 });
 userSchema.methods.crypto = async password => {
   const salt = await bcryptjs__WEBPACK_IMPORTED_MODULE_1___default.a.genSalt(10);
@@ -500,6 +595,7 @@ const productRouter = Object(express__WEBPACK_IMPORTED_MODULE_0__["Router"])();
 productRouter.post("/add-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["addProduct"]);
 productRouter.get("/all", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["allProducts"]);
 productRouter.delete("/:id/delete-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["deleteProduct"]);
+productRouter.post("/:id/addToCart/:userId", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["addToCart"]);
 productRouter.put("/:id/update-product", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["updateProduct"]);
 productRouter.get("/:id", _controllers_productController__WEBPACK_IMPORTED_MODULE_1__["getProductById"]);
 /* harmony default export */ __webpack_exports__["default"] = (productRouter);

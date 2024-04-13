@@ -10,7 +10,15 @@ const userSchema = new Schema({
     min: [6, "Must be at least 6 characters"],
   },
   address: { type: String, required: true },
+  zipCode: {
+    type: Number,
+    min: [1000, "Zip Code is too short"],
+    max: 99999,
+    // required: true,
+  },
   phoneNumber: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false },
+  cart: [{ type: Schema.Types.ObjectId, ref: "Product" }],
 });
 
 userSchema.methods.crypto = async (password) => {

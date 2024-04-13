@@ -1,7 +1,10 @@
 import Product from "../models/productModel";
+import Cart from "../models/cartModel";
+import User from "../models/userModel";
+
 // Ajouter un parfum
 const addProduct = async (req, res) => {
-  const { name, ml, price, description } = req.body;
+  const { name, ml, price, description, gender, image } = req.body;
   try {
     const newProduct = new Product({
       name,
@@ -9,6 +12,7 @@ const addProduct = async (req, res) => {
       price,
       description,
       gender,
+      image,
     });
     await newProduct.save();
     res.status(201).json(newProduct);
@@ -76,10 +80,31 @@ const allProducts = async (req, res) => {
   }
 };
 
+const addToCart = async (req, res) => {
+  try {
+    const product = await Product.findById({ _id: req.params.id });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    } else {
+      user.cart.push([product.id]);
+      await user.save();
+    }
+
+    res.json({ user, message: "Product added successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export {
   addProduct,
   allProducts,
   deleteProduct,
   updateProduct,
   getProductById,
+  addToCart,
 };
