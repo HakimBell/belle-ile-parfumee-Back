@@ -89,12 +89,18 @@ const addToCart = async (req, res) => {
     const user = await User.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
-    } else {
-      user.cart.push([product.id]);
-      await user.save();
     }
 
-    res.json({ user, message: "Product added successfully" });
+    let cart = await Cart.findById(user.userCart);
+    if (!cart) {
+      cart = await Cart.create({ products: [] });
+      user.userCart.push(cart._id);
+      user.save();
+    }
+
+    cart.products.push({ productId: product, quantity: 1 });
+    await cart.save();
+    res.json({ cart, message: "Product added successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

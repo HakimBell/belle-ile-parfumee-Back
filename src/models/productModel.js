@@ -21,7 +21,7 @@ const productSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: ["masculin", "féminin", "mixte"],
+    enum: ["Masculin", "Féminin", "Mixte"],
     required: true,
   },
 });

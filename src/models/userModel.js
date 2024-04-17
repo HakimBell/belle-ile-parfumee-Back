@@ -1,8 +1,8 @@
-import { mongoose, Schema } from "mongoose";
+import { mongoose, Schema, model } from "mongoose";
 import bcrypt from "bcryptjs";
 const userSchema = new Schema({
-  name: { type: String, required: true },
-  firstName: { type: String },
+  lastname: { type: String, required: true },
+  firstname: { type: String },
   email: { type: String, unique: true, required: true },
   password: {
     type: String,
@@ -18,7 +18,7 @@ const userSchema = new Schema({
   },
   phoneNumber: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
-  cart: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+  userCart: [{ type: Schema.Types.ObjectId, ref: "Cart" }],
 });
 
 userSchema.methods.crypto = async (password) => {
@@ -31,6 +31,6 @@ userSchema.methods.verifPass = async (password, elderPassword) => {
   return result;
 };
 
-const User = mongoose.model("User", userSchema);
+const User = model("User", userSchema);
 
 export default User;

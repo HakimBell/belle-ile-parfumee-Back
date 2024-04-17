@@ -232,12 +232,22 @@ const addToCart = async (req, res) => {
       return res.status(404).json({
         error: "User not found"
       });
-    } else {
-      user.cart.push([product.id]);
-      await user.save();
     }
+    let cart = await _models_cartModel__WEBPACK_IMPORTED_MODULE_1__["default"].findById(user.userCart);
+    if (!cart) {
+      cart = await _models_cartModel__WEBPACK_IMPORTED_MODULE_1__["default"].create({
+        products: []
+      });
+      user.userCart.push(cart._id);
+      user.save();
+    }
+    cart.products.push({
+      productId: product,
+      quantity: 1
+    });
+    await cart.save();
     res.json({
-      user,
+      cart,
       message: "Product added successfully"
     });
   } catch (error) {
@@ -268,7 +278,7 @@ __webpack_require__.r(__webpack_exports__);
 const createUser = async (req, res) => {
   try {
     const newUser = new _models_userModel__WEBPACK_IMPORTED_MODULE_0__["default"]({
-      name: req.body.name,
+      lastname: req.body.lastname,
       firstname: req.body.firstname,
       email: req.body.email,
       password: req.body.password,
@@ -278,8 +288,7 @@ const createUser = async (req, res) => {
     newUser.password = await newUser.crypto(req.body.password);
     await newUser.save();
     const token = Object(_middlewares_auth__WEBPACK_IMPORTED_MODULE_1__["generateAuthToken"])({
-      email: newUser.email,
-      name: newUser.name
+      email: newUser.email
     });
     console.log(token);
     res.json({
@@ -299,15 +308,16 @@ const login = async (req, res) => {
     const user = await _models_userModel__WEBPACK_IMPORTED_MODULE_0__["default"].findOne({
       email
     }).select("+password");
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found"
+      });
+    }
     const verify = await user.verifPass(req.body.password, user.password);
     if (!verify) {
-      const error = new Error("Invalid Password");
-      console.log(error);
-      res.json({
-        message: "Invalid Password",
-        error
+      return res.status(400).json({
+        message: "Invalid Password"
       });
-      throw error;
     }
     const token = Object(_middlewares_auth__WEBPACK_IMPORTED_MODULE_1__["generateAuthToken"])(user);
     res.json({
@@ -316,6 +326,9 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({
+      message: "Internal Server Error"
+    });
   }
 };
 
@@ -363,7 +376,7 @@ app.use(express__WEBPACK_IMPORTED_MODULE_0___default.a.urlencoded({
   extended: false
 }));
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/products", _middlewares_auth__WEBPACK_IMPORTED_MODULE_6__["auth"], _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
+app.use("/products", _routes_productRoute__WEBPACK_IMPORTED_MODULE_4__["default"]);
 app.use("/auth", _routes_userRoute__WEBPACK_IMPORTED_MODULE_5__["default"]);
 app.listen(port, () => console.log(`[SERVER] is running on http://localhost:${port}`));
 
@@ -437,8 +450,7 @@ const cartSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
   products: [{
     productId: {
       type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
-      ref: "Product",
-      required: true
+      ref: "Product"
     },
     quantity: {
       type: Number,
@@ -447,16 +459,11 @@ const cartSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
   }],
   user: {
     type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
-    ref: "User",
-    required: true
+    ref: "User"
   },
   active: {
     type: Boolean,
     default: true
-  },
-  modifiedOn: {
-    type: Date,
-    default: Date.now
   }
 });
 const Cart = Object(mongoose__WEBPACK_IMPORTED_MODULE_0__["model"])("Cart", cartSchema);
@@ -498,7 +505,7 @@ const productSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
   },
   gender: {
     type: String,
-    enum: ["masculin", "féminin", "mixte"],
+    enum: ["Masculin", "Féminin", "Mixte"],
     required: true
   }
 });
@@ -523,11 +530,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
-  name: {
+  lastname: {
     type: String,
     required: true
   },
-  firstName: {
+  firstname: {
     type: String
   },
   email: {
@@ -558,9 +565,9 @@ const userSchema = new mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"]({
     type: Boolean,
     default: false
   },
-  cart: [{
+  userCart: [{
     type: mongoose__WEBPACK_IMPORTED_MODULE_0__["Schema"].Types.ObjectId,
-    ref: "Product"
+    ref: "Cart"
   }]
 });
 userSchema.methods.crypto = async password => {
@@ -572,7 +579,7 @@ userSchema.methods.verifPass = async (password, elderPassword) => {
   const result = await bcryptjs__WEBPACK_IMPORTED_MODULE_1___default.a.compare(password, elderPassword);
   return result;
 };
-const User = mongoose__WEBPACK_IMPORTED_MODULE_0__["mongoose"].model("User", userSchema);
+const User = Object(mongoose__WEBPACK_IMPORTED_MODULE_0__["model"])("User", userSchema);
 /* harmony default export */ __webpack_exports__["default"] = (User);
 
 /***/ }),

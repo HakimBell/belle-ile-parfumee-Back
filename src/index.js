@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.get("/", (req, res) => res.send("Bienvenue"));
-app.use("/products", auth, productRouter);
+app.use("/products", productRouter);
 app.use("/auth", authRouter);
 app.listen(port, () =>
   console.log(`[SERVER] is running on http://localhost:${port}`)
