@@ -1,6 +1,7 @@
 import Product from "../models/productModel";
 import Cart from "../models/cartModel";
 import User from "../models/userModel";
+import mongoose from "mongoose";
 
 // Ajouter un parfum
 const addProduct = async (req, res) => {
@@ -82,25 +83,56 @@ const allProducts = async (req, res) => {
 
 const addToCart = async (req, res) => {
   try {
-    const product = await Product.findById({ _id: req.params.id });
+    const { id: productId, userId } = req.params;
+
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    let cart = await Cart.findOne({ user: userId, active: true });
+
+    if (!cart) {
+      cart = new Cart({ items: [], user: userId });
+    }
+
+    const existingItem = cart.items.find((item) =>
+      item.product.equals(productId)
+    );
+    if (existingItem) {
+      existingItem.quantity++;
+    } else {
+      cart.items.push({ product: productId, quantity: 1 });
+    }
+
+    await cart.save();
+
+    res.json({ cart, message: "Product added successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllProductsFromCart = async (req, res) => {
+  try {
     const user = await User.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    let cart = await Cart.findById(user.userCart);
+    const cart = await Cart.findOne({ user: user._id, active: true }).populate(
+      "items.product"
+    );
     if (!cart) {
-      cart = await Cart.create({ products: [] });
-      user.userCart.push(cart._id);
-      user.save();
+      return res.status(404).json({ error: "Cart not found" });
     }
 
-    cart.products.push({ productId: product, quantity: 1 });
-    await cart.save();
-    res.json({ cart, message: "Product added successfully" });
+    res.json(cart.items.map((item) => item.product));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -113,4 +145,5 @@ export {
   updateProduct,
   getProductById,
   addToCart,
+  getAllProductsFromCart,
 };

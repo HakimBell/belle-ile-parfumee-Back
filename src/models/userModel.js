@@ -18,7 +18,7 @@ const userSchema = new Schema({
   },
   phoneNumber: { type: String, required: true },
   isAdmin: { type: Boolean, default: false },
-  userCart: [{ type: Schema.Types.ObjectId, ref: "Cart" }],
+  userCart: { type: Schema.Types.ObjectId, ref: "Cart" },
 });
 
 userSchema.methods.crypto = async (password) => {
